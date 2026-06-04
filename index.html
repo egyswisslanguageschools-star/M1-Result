@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>M1 Final Results 2025-2026 | EGYSWISS LANGUAGE SCHOOLS</title>
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS for reading Excel Files -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        serif: ['Playfair Display', 'serif'],
+                    },
+                    colors: {
+                        school: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        /* Custom Styles & Print Media Queries */
+        body {
+            background-color: #f8fafc;
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .cert-bg {
+            background-image: radial-gradient(#fef9c3 1px, transparent 1px);
+            background-size: 20px 20px;
+            background-color: #fdfbf7;
+        }
+
+        @media print {
+            body {
+                background: white !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .print-only {
+                display: block !important;
+            }
+            .shadow-lg, .shadow-md, .shadow-xl {
+                box-shadow: none !important;
+                border: 1px solid #e2e8f0;
+            }
+            .glass-card {
+                background: white;
+                border: none;
+            }
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .print-break {
+                page-break-before: always;
+            }
+        }
+
+        /* Certificate Borders */
+        .cert-border {
+            border: 12px solid #ca8a04;
+            position: relative;
+        }
+        .cert-border::after {
+            content: '';
+            position: absolute;
+            top: 4px; left: 4px; right: 4px; bottom: 4px;
+            border: 2px solid #ca8a04;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased min-h-screen flex flex-col">
+
+    <!-- Header Section -->
+    <header class="bg-school-900 text-white py-8 shadow-md print:bg-white print:text-school-900 print:shadow-none print:border-b-2 print:border-school-900">
+        <div class="container mx-auto px-4 text-center">
+            <!-- Logo Section without Fallback to ensure image shows -->
+            <div class="w-32 h-32 mx-auto mb-4 flex items-center justify-center bg-white rounded-xl shadow-lg border-2 border-school-500 p-2">
+                <img src="esls.png" alt="EGYSWISS Logo" class="max-w-full max-h-full object-contain">
+            </div>
+            <h1 class="text-3xl md:text-4xl font-bold tracking-tight mb-2">EGYSWISS LANGUAGE SCHOOLS</h1>
+            <h2 class="text-xl md:text-2xl font-medium text-school-100 print:text-school-700">M1 Final Results 2025-2026</h2>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8 max-w-6xl">
+        
+        <!-- Upload Section (Visible Initially) -->
+        <div id="upload-section" class="max-w-2xl mx-auto mb-12 transition-all duration-500">
+            <div class="bg-white rounded-2xl shadow-lg p-8 text-center border-2 border-dashed border-slate-300 hover:border-school-500 transition-colors">
+                <i data-lucide="file-spreadsheet" class="w-14 h-14 text-school-500 mx-auto mb-4"></i>
+                <h3 class="text-2xl font-semibold mb-2 text-slate-800">Load Results Data</h3>
+                <p class="text-slate-500 mb-6">Please upload the <b>M1.xlsx</b> or <b>CSV</b> file to initialize the system.</p>
+                
+                <div class="flex flex-col items-center justify-center">
+                    <label class="cursor-pointer bg-school-50 hover:bg-school-100 text-school-700 font-semibold py-3 px-6 rounded-xl border border-school-200 transition-colors inline-flex items-center gap-2">
+                        <i data-lucide="upload" class="w-5 h-5"></i>
+                        Select Excel File
+                        <input type="file" id="excel-upload" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileUpload(event)">
+                    </label>
+                    <p id="upload-error" class="text-red-500 text-sm mt-3 font-medium hidden flex items-center justify-center gap-1">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        <span id="upload-error-text">Failed to read file. Make sure it's the correct format.</span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div id="search-section" class="max-w-2xl mx-auto mb-12 no-print hidden transition-all duration-500">
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 text-center border border-slate-100">
+                <h3 class="text-xl font-semibold mb-6 text-slate-700">Student Portal Access</h3>
+                
+                <div class="relative max-w-md mx-auto">
+                    <label for="national-id" class="block text-sm font-semibold text-slate-600 mb-1 text-left">
+                        NATIONAL ID NUMBER
+                        <span class="block text-xs text-slate-400 font-normal">الرقم القومي</span>
+                    </label>
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <input type="text" id="national-id" 
+                            class="w-full px-5 py-3 border-2 border-slate-200 rounded-xl focus:border-school-500 focus:ring-4 focus:ring-school-100 outline-none transition-all text-lg tracking-wider"
+                            placeholder="Enter 14-digit ID..."
+                            autocomplete="off">
+                        <button onclick="handleSearch()" class="bg-school-600 hover:bg-school-700 text-white px-8 py-3 rounded-xl font-semibold transition-colors flex items-center justify-center gap-2 shadow-md hover:shadow-lg w-full md:w-auto">
+                            <i data-lucide="search" class="w-5 h-5"></i>
+                            Search
+                        </button>
+                    </div>
+                    <p id="error-message" class="text-red-500 text-sm mt-3 font-medium hidden flex items-center justify-center gap-1">
+                        <i data-lucide="alert-circle" class="w-4 h-4"></i>
+                        Student Not Found. Please check the National ID.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Section (Hidden initially, shown after upload) -->
+        <div id="leaderboard-section" class="no-print hidden">
+            <div class="text-center mb-8">
+                <h3 class="text-3xl font-bold text-school-800 flex items-center justify-center gap-3">
+                    <i data-lucide="trophy" class="w-8 h-8 text-yellow-500"></i>
+                    Top 10 Students
+                </h3>
+                <p class="text-slate-500 mt-2">Honoring our highest achievers for the academic year.</p>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-lg overflow-hidden border border-slate-100">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-school-50 text-school-800 text-sm uppercase tracking-wide border-b border-school-100">
+                                <th class="py-4 px-6 font-semibold w-24 text-center">Rank</th>
+                                <th class="py-4 px-6 font-semibold">Student Name</th>
+                                <th class="py-4 px-6 font-semibold text-right">Total / 280</th>
+                                <th class="py-4 px-6 font-semibold text-right">Percentage</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body" class="divide-y divide-slate-50">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Section (Hidden initially) -->
+        <div id="result-section" class="hidden animate-[fadeIn_0.5s_ease-out]">
+            
+            <!-- Action Bar -->
+            <div class="flex justify-between items-center mb-6 no-print">
+                <button onclick="clearSearch()" class="text-school-600 hover:text-school-800 font-medium flex items-center gap-2 transition-colors">
+                    <i data-lucide="arrow-left" class="w-5 h-5"></i> Back to Leaderboard
+                </button>
+                <button onclick="window.print()" class="bg-slate-800 hover:bg-slate-700 text-white px-5 py-2 rounded-lg font-medium flex items-center gap-2 shadow-md transition-colors">
+                    <i data-lucide="printer" class="w-5 h-5"></i> Print Result
+                </button>
+            </div>
+
+            <!-- Student ID Card -->
+            <div class="bg-white rounded-2xl shadow-lg p-6 md:p-8 mb-8 border border-slate-100 relative overflow-hidden">
+                <div class="absolute top-0 left-0 w-2 h-full bg-school-500"></div>
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <p class="text-sm font-semibold text-school-600 tracking-wider uppercase mb-1">Student Profile</p>
+                        <h2 id="res-name" class="text-2xl md:text-3xl font-bold text-slate-800 mb-1">Student Name</h2>
+                        <p class="text-slate-500 font-mono" id="res-id">ID: 00000000000000</p>
+                    </div>
+                    <div class="bg-school-50 border border-school-100 rounded-xl px-6 py-4 text-center min-w-[140px]">
+                        <p class="text-xs font-semibold text-school-600 uppercase tracking-wide">Overall Rank</p>
+                        <p class="text-3xl font-bold text-school-800 mt-1" id="res-rank">#1</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Dashboard (Updated to 3 columns since Grade is removed) -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                    <p class="text-sm font-medium text-slate-500 mb-1">Total Marks</p>
+                    <p class="text-3xl font-bold text-slate-800"><span id="res-total">0.00</span> <span class="text-base font-normal text-slate-400">/ 280</span></p>
+                </div>
+                <div class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                    <p class="text-sm font-medium text-slate-500 mb-1">Percentage</p>
+                    <p class="text-3xl font-bold text-blue-600"><span id="res-percentage">0.00</span>%</p>
+                </div>
+                <div id="status-card" class="bg-white rounded-xl p-5 shadow-sm border border-slate-100 flex flex-col justify-center items-center text-center">
+                    <p class="text-sm font-medium text-slate-500 mb-1">Status</p>
+                    <div id="status-badge" class="flex items-center gap-2 text-2xl font-bold">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Warning Message -->
+            <div id="status-warning" class="hidden mb-8 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg flex items-start gap-3">
+                <i data-lucide="alert-triangle" class="w-6 h-6 text-red-500 flex-shrink-0 mt-0.5"></i>
+                <div>
+                    <h4 class="text-red-800 font-semibold">NOT PASSED</h4>
+                    <p class="text-red-700 text-sm mt-1">Student did not meet the minimum passing requirements in one or more core subjects.</p>
+                </div>
+            </div>
+
+            <!-- Detailed Tables -->
+            <div class="grid md:grid-cols-2 gap-8 mb-12">
+                <!-- Main Subjects -->
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-200">
+                    <div class="bg-school-800 text-white px-6 py-4 flex items-center gap-2">
+                        <i data-lucide="book-open" class="w-5 h-5"></i>
+                        <h3 class="font-semibold text-lg">Main Subjects</h3>
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                                <th class="py-3 px-6 font-medium">Subject</th>
+                                <th class="py-3 px-6 font-medium text-right">Student Mark</th>
+                                <th class="py-3 px-6 font-medium text-right text-slate-400">Full Mark</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100" id="main-subjects-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Additional Subjects -->
+                <div class="bg-white rounded-2xl shadow-md overflow-hidden border border-slate-200">
+                    <div class="bg-slate-800 text-white px-6 py-4 flex items-center gap-2">
+                        <i data-lucide="library" class="w-5 h-5"></i>
+                        <h3 class="font-semibold text-lg">Additional Subjects</h3>
+                    </div>
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-600 text-sm border-b border-slate-200">
+                                <th class="py-3 px-6 font-medium">Subject</th>
+                                <th class="py-3 px-6 font-medium text-right">Student Mark</th>
+                                <th class="py-3 px-6 font-medium text-right text-slate-400">Full Mark</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100" id="add-subjects-body">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Certificate Section (Conditionally Visible) -->
+            <div id="certificate-section" class="hidden mb-12">
+                <!-- Page break for cleaner printing if needed -->
+                <div class="print-break"></div>
+                <div class="cert-bg cert-border p-8 md:p-12 text-center rounded-sm shadow-xl max-w-4xl mx-auto relative overflow-hidden">
+                    <div class="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none"></div>
+                    <div class="relative z-10">
+                        <div class="w-28 h-28 mx-auto mb-6 flex items-center justify-center bg-white rounded-xl shadow-md border-2 border-yellow-400 p-2">
+                            <img src="esls.png" alt="EGYSWISS Logo" class="max-w-full max-h-full object-contain">
+                        </div>
+                        <h4 class="font-sans text-school-800 font-bold tracking-widest uppercase text-sm mb-2">EGYSWISS LANGUAGE SCHOOLS</h4>
+                        <h2 class="font-serif text-4xl md:text-5xl font-bold text-yellow-700 mb-8 mt-4">Certificate of Excellence</h2>
+                        <p class="font-serif text-xl text-slate-600 italic mb-6">This is to certify that</p>
+                        <h3 class="font-sans text-3xl md:text-4xl font-bold text-slate-800 mb-6 border-b-2 border-yellow-300 inline-block px-8 pb-2" id="cert-name">Student Name</h3>
+                        <p class="text-lg text-slate-700 max-w-2xl mx-auto leading-relaxed mb-8">
+                            has achieved <span class="font-bold text-school-700">Rank #<span id="cert-rank"></span></span> in the M1 Final Results for the academic year 2025-2026, demonstrating exceptional academic performance with an outstanding percentage of <span class="font-bold text-school-700"><span id="cert-percentage"></span>%</span>.
+                        </p>
+                        <p class="font-serif text-2xl text-yellow-600 font-bold mb-12">Congratulations on your outstanding performance!</p>
+                        
+                        <div class="flex justify-between items-end px-4 md:px-12 mt-12 border-t border-yellow-200 pt-8">
+                            <div class="text-center">
+                                <div class="w-48 border-b-2 border-slate-400 mb-3 mx-auto"></div>
+                                <p class="text-sm font-semibold text-slate-600 uppercase mb-1">School Principal</p>
+                                <p class="text-lg font-bold text-slate-800">Rehab Hadhoud</p>
+                            </div>
+                            <div class="w-24 h-24 rounded-full border-4 border-yellow-400 flex items-center justify-center opacity-80 rotate-12 hidden md:flex">
+                                <span class="font-serif font-bold text-yellow-600 text-sm text-center leading-tight">TOP 10<br>HONORS</span>
+                            </div>
+                            <div class="text-center">
+                                <div class="w-48 border-b-2 border-slate-400 mb-3 mx-auto"></div>
+                                <p class="text-sm font-semibold text-slate-600 uppercase mb-1">Vice Principal</p>
+                                <p class="text-lg font-bold text-slate-800">Ibrahim Elkomy</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-slate-400 py-6 text-center text-sm print:hidden mt-auto">
+        <p>&copy; 2026 EGYSWISS LANGUAGE SCHOOLS. All Rights Reserved.</p>
+        <p class="mt-1 opacity-60">Result Verification Portal</p>
+    </footer>
+
+    <script>
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        let studentsData = [{'id': '31307071800497', 'name': 'Ahmed Ibrahim El Komy', 'arabic': 78.6, 'englishOL': 59.63, 'social': 40.0, 'math': 60.0, 'science': 39.4, 'total': 277.63, 'religion': 39.0, 'art': 18.0, 'ict': 17.75, 'englishAL': 48.9, 'german': 38.9, 'french': 39.6}, {'id': '31307161804513', 'name': 'Ahmed Mohamed Farouk', 'arabic': 76.2, 'englishOL': 56.1, 'social': 38.6, 'math': 55.8, 'science': 38.8, 'total': 265.5, 'religion': 36.2, 'art': 16.15, 'ict': 17.2, 'englishAL': 43.76, 'german': 38.5, 'french': 33.6}, {'id': '31207151803573', 'name': 'Ahmed Moawad Mohamed', 'arabic': 75.6, 'englishOL': 58.58, 'social': 37.6, 'math': 50.18, 'science': 38.2, 'total': 260.15999999999997, 'religion': 35.4, 'art': 17.5, 'ict': 18.5, 'englishAL': 48.93, 'german': 36.1, 'french': 33.7}, {'id': '31307131800777', 'name': 'Adam Karim Hanafy', 'arabic': 73.1, 'englishOL': 57.15, 'social': 35.0, 'math': 57.3, 'science': 36.6, 'total': 259.15, 'religion': 34.9, 'art': 17.25, 'ict': 17.4, 'englishAL': 43.86, 'german': 35.4, 'french': 32.9}, {'id': '31303131807814', 'name': 'Asser Alaa Zakaria', 'arabic': 71.4, 'englishOL': 57.23, 'social': 36.5, 'math': 48.68, 'science': 35.9, 'total': 249.71, 'religion': 34.0, 'art': 16.65, 'ict': 15.45, 'englishAL': 47.96, 'german': 34.6, 'french': 36.2}, {'id': '31307071800519', 'name': 'Eyad Ibrahim El Komy', 'arabic': 79.2, 'englishOL': 59.4, 'social': 40.0, 'math': 60.0, 'science': 38.4, 'total': 277.0, 'religion': 36.1, 'art': 19.8, 'ict': 18.15, 'englishAL': 48.2, 'german': 36.7, 'french': 39.0}, {'id': '31305171802958', 'name': 'Baraa Walid AbdelAala', 'arabic': 79.4, 'englishOL': 59.48, 'social': 39.1, 'math': 59.85, 'science': 40.0, 'total': 277.83, 'religion': 38.7, 'art': 19.3, 'ict': 19.35, 'englishAL': 49.33, 'german': 39.4, 'french': 40.0}, {'id': '31307080203094', 'name': 'Hamza Ahmed Reda', 'arabic': 73.0, 'englishOL': 51.15, 'social': 33.8, 'math': 44.63, 'science': 31.3, 'total': 233.88, 'religion': 37.1, 'art': 16.4, 'ict': 15.9, 'englishAL': 41.96, 'german': 33.6, 'french': 30.8}, {'id': '31211231800793', 'name': 'Khaled Mahmoud Morsi', 'arabic': 75.3, 'englishOL': 54.75, 'social': 34.9, 'math': 55.8, 'science': 36.1, 'total': 256.85, 'religion': 35.9, 'art': 18.1, 'ict': 17.2, 'englishAL': 42.73, 'german': 32.5, 'french': 35.6}, {'id': '31312051801792', 'name': 'Ziad Ahmed Masoud', 'arabic': 75.5, 'englishOL': 56.48, 'social': 38.0, 'math': 55.05, 'science': 36.1, 'total': 261.13, 'religion': 34.5, 'art': 16.1, 'ict': 19.1, 'englishAL': 46.09, 'german': 38.1, 'french': 37.8}, {'id': '31310201800797', 'name': 'Sherif Mahmoud Adel', 'arabic': 68.7, 'englishOL': 53.85, 'social': 32.4, 'math': 41.7, 'science': 30.2, 'total': 226.85000000000002, 'religion': 34.0, 'art': 16.4, 'ict': 15.6, 'englishAL': 42.0, 'german': 36.7, 'french': 37.9}, {'id': '31306111804532', 'name': 'Abdelrahman Attia Fathy', 'arabic': 80.0, 'englishOL': 59.85, 'social': 39.9, 'math': 60.0, 'science': 39.9, 'total': 279.65, 'religion': 39.3, 'art': 18.0, 'ict': 20.0, 'englishAL': 49.81, 'german': 39.7, 'french': 40.0}, {'id': '31306181805897', 'name': 'Omar Ahmed Fawzy', 'arabic': 75.4, 'englishOL': 55.88, 'social': 39.1, 'math': 56.63, 'science': 38.9, 'total': 265.90999999999997, 'religion': 37.2, 'art': 18.5, 'ict': 17.6, 'englishAL': 45.0, 'german': 33.1, 'french': 38.4}, {'id': '31207031805998', 'name': 'Omar Abdelshafy Ibrahim', 'arabic': 73.0, 'englishOL': 52.5, 'social': 35.0, 'math': 43.89, 'science': 31.0, 'total': 235.39, 'religion': 35.5, 'art': 15.25, 'ict': 14.85, 'englishAL': 42.26, 'german': 37.6, 'french': 34.0}, {'id': '31212011800713', 'name': 'Omar Mohamed Elsaid', 'arabic': 79.8, 'englishOL': 60.0, 'social': 40.0, 'math': 60.0, 'science': 40.0, 'total': 279.8, 'religion': 39.4, 'art': 20.0, 'ict': 20.0, 'englishAL': 49.73, 'german': 40.0, 'french': 39.6}, {'id': '31305281800276', 'name': 'Omar Mohamed Kamel', 'arabic': 78.4, 'englishOL': 59.18, 'social': 39.0, 'math': 55.58, 'science': 39.5, 'total': 271.65999999999997, 'religion': 38.9, 'art': 18.2, 'ict': 19.35, 'englishAL': 48.36, 'german': 37.7, 'french': 38.4}, {'id': '31308031800334', 'name': 'Omar Mahmoud Masoud', 'arabic': 78.1, 'englishOL': 58.28, 'social': 38.4, 'math': 57.6, 'science': 38.7, 'total': 271.08000000000004, 'religion': 38.2, 'art': 18.1, 'ict': 19.2, 'englishAL': 46.1, 'german': 38.3, 'french': 37.4}, {'id': '31308081806112', 'name': 'Mazen Ahmed Mohamed', 'arabic': 76.6, 'englishOL': 54.3, 'social': 36.2, 'math': 57.0, 'science': 36.4, 'total': 260.5, 'religion': 36.6, 'art': 14.65, 'ict': 16.55, 'englishAL': 39.83, 'german': 30.2, 'french': 36.5}, {'id': '31307261802771', 'name': 'Mazen Mohamed Abbas', 'arabic': 75.4, 'englishOL': 55.43, 'social': 36.0, 'math': 58.13, 'science': 33.0, 'total': 257.96000000000004, 'religion': 37.2, 'art': 16.45, 'ict': 17.6, 'englishAL': 43.53, 'german': 37.5, 'french': 37.0}, {'id': '31311041803634', 'name': 'Malek Ahmed Abdelstar', 'arabic': 76.3, 'englishOL': 59.33, 'social': 38.0, 'math': 58.13, 'science': 39.1, 'total': 270.86, 'religion': 35.6, 'art': 15.85, 'ict': 17.85, 'englishAL': 47.79, 'german': 32.1, 'french': 35.7}, {'id': '31312101800458', 'name': 'Malek Hamdy Saleh', 'arabic': 64.1, 'englishOL': 46.35, 'social': 34.2, 'math': 41.25, 'science': 29.9, 'total': 215.8, 'religion': 33.2, 'art': 16.55, 'ict': 16.7, 'englishAL': 38.81, 'german': 30.8, 'french': 34.6}, {'id': '31307221802116', 'name': 'Malek Mohamed Ahmed', 'arabic': 73.92, 'englishOL': 54.45, 'social': 36.0, 'math': 41.55, 'science': 29.4, 'total': 235.32, 'religion': 36.2, 'art': 17.8, 'ict': 18.6, 'englishAL': 45.06, 'german': 34.8, 'french': 37.1}, {'id': '31211160200153', 'name': 'Mahmoud Islam Ali', 'arabic': 66.7, 'englishOL': 57.45, 'social': 31.6, 'math': 43.13, 'science': 29.9, 'total': 228.77999999999997, 'religion': 33.8, 'art': 14.85, 'ict': 15.6, 'englishAL': 47.84, 'german': 37.0, 'french': 37.0}, {'id': '31212121810412', 'name': 'Yassin Ahmed Mohamed', 'arabic': 76.6, 'englishOL': 58.95, 'social': 38.1, 'math': 52.13, 'science': 37.9, 'total': 263.67999999999995, 'religion': 37.0, 'art': 17.55, 'ict': 19.3, 'englishAL': 47.53, 'german': 38.4, 'french': 37.3}, {'id': '31306300200117', 'name': 'Yassin Mahmoud Aman', 'arabic': 65.4, 'englishOL': 46.5, 'social': 31.2, 'math': 43.35, 'science': 26.7, 'total': 213.15, 'religion': 32.6, 'art': 15.65, 'ict': 15.35, 'englishAL': 34.93, 'german': 27.8, 'french': 29.6}, {'id': '31211071804215', 'name': 'Yassin Ismail AbdelSalam', 'arabic': 73.3, 'englishOL': 57.6, 'social': 36.5, 'math': 48.0, 'science': 33.8, 'total': 249.2, 'religion': 31.2, 'art': 16.55, 'ict': 17.3, 'englishAL': 45.74, 'german': 34.9, 'french': 36.3}, {'id': '31310101802636', 'name': 'Youssef Mohamed Masoud', 'arabic': 80.0, 'englishOL': 59.33, 'social': 39.4, 'math': 60.0, 'science': 39.3, 'total': 278.03, 'religion': 38.0, 'art': 17.05, 'ict': 19.55, 'englishAL': 49.18, 'german': 39.8, 'french': 39.7}, {'id': '31307141800376', 'name': 'Youssef Mohamed Mostafa', 'arabic': 74.4, 'englishOL': 55.5, 'social': 36.0, 'math': 52.8, 'science': 36.3, 'total': 255.0, 'religion': 38.0, 'art': 16.4, 'ict': 17.35, 'englishAL': 44.84, 'german': 36.3, 'french': 35.7}, {'id': '31306191803345', 'name': 'Elina Ahmed Samy', 'arabic': 78.4, 'englishOL': 58.5, 'social': 39.2, 'math': 59.25, 'science': 39.6, 'total': 274.95000000000005, 'religion': 37.7, 'art': 18.6, 'ict': 19.5, 'englishAL': 49.2, 'german': 37.5, 'french': 39.2}, {'id': '31308041800081', 'name': 'Ayten Mohamed Ali', 'arabic': 73.8, 'englishOL': 58.28, 'social': 37.3, 'math': 42.98, 'science': 34.4, 'total': 246.76, 'religion': 35.0, 'art': 19.4, 'ict': 16.4, 'englishAL': 46.66, 'german': 36.98, 'french': 34.4}, {'id': '31304041801325', 'name': 'Aisel Mahmoud Amin', 'arabic': 77.0, 'englishOL': 58.65, 'social': 36.7, 'math': 53.03, 'science': 37.6, 'total': 262.98, 'religion': 36.5, 'art': 19.7, 'ict': 18.65, 'englishAL': 48.31, 'german': 37.9, 'french': 39.1}, {'id': '31303171802483', 'name': 'Eman Mostafa Fouad', 'arabic': 77.52, 'englishOL': 58.73, 'social': 38.9, 'math': 55.43, 'science': 39.1, 'total': 269.68, 'religion': 38.6, 'art': 19.35, 'ict': 18.7, 'englishAL': 48.61, 'german': 36.3, 'french': 36.9}, {'id': '31308061805624', 'name': 'Jana Mohamed Thabet', 'arabic': 76.6, 'englishOL': 59.55, 'social': 36.3, 'math': 54.53, 'science': 37.4, 'total': 264.38, 'religion': 38.2, 'art': 19.05, 'ict': 17.4, 'englishAL': 47.7, 'german': 39.0, 'french': 39.1}, {'id': '31308281800062', 'name': 'Jody Mohamed Abdo', 'arabic': 76.4, 'englishOL': 56.78, 'social': 32.9, 'math': 47.55, 'science': 34.5, 'total': 248.13, 'religion': 35.3, 'art': 17.6, 'ict': 15.95, 'englishAL': 44.83, 'german': 35.0, 'french': 36.6}, {'id': '31309030200607', 'name': 'Jody Hossam Wahba', 'arabic': 77.7, 'englishOL': 59.25, 'social': 36.7, 'math': 56.85, 'science': 38.3, 'total': 268.8, 'religion': 37.0, 'art': 19.4, 'ict': 19.1, 'englishAL': 49.81, 'german': 38.6, 'french': 39.6}, {'id': '31205048801209', 'name': 'Joy George Beshara', 'arabic': 70.5, 'englishOL': 59.4, 'social': 35.8, 'math': 54.0, 'science': 37.9, 'total': 257.6, 'religion': 34.8, 'art': 19.65, 'ict': 18.55, 'englishAL': 49.55, 'german': 37.3, 'french': 36.4}, {'id': '31311251802681', 'name': 'Khadija Mohamed Elsayed', 'arabic': 74.5, 'englishOL': 56.25, 'social': 33.0, 'math': 47.7, 'science': 31.4, 'total': 242.85, 'religion': 36.4, 'art': 18.65, 'ict': 18.0, 'englishAL': 45.35, 'german': 38.0, 'french': 35.3}, {'id': '31308211803048', 'name': 'Razan Amr Mahmoud', 'arabic': 78.4, 'englishOL': 59.7, 'social': 39.4, 'math': 59.25, 'science': 39.9, 'total': 276.65, 'religion': 36.4, 'art': 18.75, 'ict': 19.1, 'englishAL': 48.04, 'german': 38.1, 'french': 39.7}, {'id': '31311281805006', 'name': 'Raghda Reda Atiya', 'arabic': 75.3, 'englishOL': 54.53, 'social': 36.4, 'math': 52.95, 'science': 36.6, 'total': 255.78000000000003, 'religion': 37.3, 'art': 19.9, 'ict': 16.9, 'englishAL': 46.11, 'german': 37.1, 'french': 39.0}, {'id': '31307171804821', 'name': 'Rawan Mohamed Gamal', 'arabic': 76.4, 'englishOL': 54.83, 'social': 36.4, 'math': 54.08, 'science': 35.6, 'total': 257.31000000000006, 'religion': 36.8, 'art': 18.8, 'ict': 17.9, 'englishAL': 46.86, 'german': 37.3, 'french': 40.0}, {'id': '31302031802665', 'name': 'Rodina Ragab Saqr', 'arabic': 78.8, 'englishOL': 60.0, 'social': 40.0, 'math': 60.0, 'science': 39.9, 'total': 278.7, 'religion': 36.7, 'art': 18.95, 'ict': 19.05, 'englishAL': 48.76, 'german': 39.1, 'french': 40.0}, {'id': '31308191803704', 'name': 'Rital Ahmed Abdelsalam', 'arabic': 77.8, 'englishOL': 60.0, 'social': 40.0, 'math': 60.0, 'science': 39.6, 'total': 277.4, 'religion': 37.0, 'art': 18.3, 'ict': 18.8, 'englishAL': 49.7, 'german': 39.0, 'french': 40.0}, {'id': '31208251801124', 'name': 'Zeina Abdelmonem Mohamed', 'arabic': 74.5, 'englishOL': 56.25, 'social': 37.7, 'math': 56.48, 'science': 30.6, 'total': 255.53, 'religion': 35.7, 'art': 17.35, 'ict': 16.2, 'englishAL': 45.94, 'german': 33.2, 'french': 37.0}, {'id': '31311061802529', 'name': 'Sara Mohamed Atiya', 'arabic': 78.0, 'englishOL': 59.85, 'social': 37.1, 'math': 58.88, 'science': 39.0, 'total': 272.83, 'religion': 37.2, 'art': 19.1, 'ict': 18.65, 'englishAL': 49.35, 'german': 39.8, 'french': 39.9}, {'id': '31303281804384', 'name': 'Salma Mahmoud Ali', 'arabic': 78.1, 'englishOL': 56.1, 'social': 38.5, 'math': 60.0, 'science': 36.6, 'total': 269.29999999999995, 'religion': 35.9, 'art': 17.9, 'ict': 18.0, 'englishAL': 47.88, 'german': 35.6, 'french': 36.5}, {'id': '31402058801126', 'name': 'Aliaa Yousry Ibrahim', 'arabic': 79.8, 'englishOL': 59.4, 'social': 39.3, 'math': 59.33, 'science': 39.7, 'total': 277.53, 'religion': 36.5, 'art': 18.4, 'ict': 17.65, 'englishAL': 48.8, 'german': 38.4, 'french': 38.2}, {'id': '31301141800181', 'name': 'Farah Mohamed Adel', 'arabic': 77.6, 'englishOL': 58.2, 'social': 38.4, 'math': 58.28, 'science': 38.4, 'total': 270.88, 'religion': 37.64, 'art': 19.2, 'ict': 18.55, 'englishAL': 48.49, 'german': 38.8, 'french': 39.9}, {'id': '31306301802064', 'name': 'Farida Abdelqader Ahmed', 'arabic': 77.1, 'englishOL': 59.7, 'social': 37.3, 'math': 56.7, 'science': 38.4, 'total': 269.19999999999993, 'religion': 36.4, 'art': 19.4, 'ict': 18.85, 'englishAL': 48.89, 'german': 37.5, 'french': 39.4}, {'id': '31309090200665', 'name': 'Farida Mohamed Salah', 'arabic': 77.6, 'englishOL': 57.23, 'social': 38.2, 'math': 53.42, 'science': 39.1, 'total': 265.55, 'religion': 37.6, 'art': 19.0, 'ict': 18.0, 'englishAL': 47.2, 'german': 38.2, 'french': 39.0}, {'id': '31308181805407', 'name': 'Fairouz Abdelmonem Mohamed', 'arabic': 72.1, 'englishOL': 49.73, 'social': 34.8, 'math': 51.83, 'science': 31.2, 'total': 239.66, 'religion': 34.8, 'art': 17.9, 'ict': 16.55, 'englishAL': 44.33, 'german': 32.3, 'french': 38.1}, {'id': '31303130200266', 'name': 'Kenzy Salah Hussein', 'arabic': 77.8, 'englishOL': 59.4, 'social': 38.9, 'math': 60.0, 'science': 40.0, 'total': 276.1, 'religion': 37.8, 'art': 19.1, 'ict': 18.7, 'englishAL': 48.91, 'german': 38.8, 'french': 39.9}, {'id': '31307291800765', 'name': 'Login Mohamed Ahmed', 'arabic': 77.6, 'englishOL': 55.65, 'social': 37.0, 'math': 57.6, 'science': 37.7, 'total': 265.55, 'religion': 38.8, 'art': 18.0, 'ict': 18.65, 'englishAL': 47.31, 'german': 37.7, 'french': 36.7}, {'id': '31301011801321', 'name': 'Nada Ashraf Mahmoud', 'arabic': 78.7, 'englishOL': 59.33, 'social': 38.2, 'math': 52.65, 'science': 37.3, 'total': 266.17999999999995, 'religion': 38.0, 'art': 18.25, 'ict': 18.0, 'englishAL': 48.54, 'german': 37.4, 'french': 39.4}, {'id': '31301011801585', 'name': 'Nour Walid Ezzat', 'arabic': 73.6, 'englishOL': 58.58, 'social': 35.9, 'math': 47.85, 'science': 38.4, 'total': 254.33, 'religion': 32.4, 'art': 19.1, 'ict': 17.85, 'englishAL': 48.48, 'german': 37.0, 'french': 39.6}];
+        let rankedStudents = [];
+window.addEventListener('load',()=>{initSystem();document.getElementById('upload-section').classList.add('hidden');document.getElementById('search-section').classList.remove('hidden');document.getElementById('leaderboard-section').classList.remove('hidden');});
+
+        // System Constants
+        const FULL_MARKS = {
+            main: { arabic: 80, englishOL: 60, social: 40, math: 60, science: 40, total: 280 },
+            additional: { englishAL: 50, german: 40, french: 40, religion: 40, art: 20, ict: 20 }
+        };
+
+        // File Upload Handler using SheetJS
+        function handleFileUpload(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+
+            const errorEl = document.getElementById('upload-error');
+            errorEl.classList.add('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                    const jsonData = XLSX.utils.sheet_to_json(firstSheet, {header: 1});
+
+                    studentsData = [];
+                    let isDataRow = false;
+
+                    for(let i=0; i<jsonData.length; i++) {
+                        const row = jsonData[i];
+                        if(!row || row.length === 0) continue;
+
+                        // Start reading after the header column that has 'NATIONAL ID NUMBER'
+                        if(row[0] && row[0].toString().trim().toUpperCase() === 'NATIONAL ID NUMBER') {
+                            isDataRow = true;
+                            continue; // skip the header row
+                        }
+
+                        if(isDataRow && row[0]) {
+                            // Extract Data according to provided CSV structure
+                            studentsData.push({
+                                id: row[0].toString().trim(),
+                                name: row[1] ? row[1].toString().trim() : 'Unknown',
+                                arabic: parseFloat(row[3]) || 0,
+                                englishOL: parseFloat(row[4]) || 0,
+                                social: parseFloat(row[5]) || 0,
+                                math: parseFloat(row[6]) || 0,
+                                science: parseFloat(row[7]) || 0,
+                                total: parseFloat(row[8]) || 0,
+                                religion: parseFloat(row[9]) || 0,
+                                art: parseFloat(row[10]) || 0,
+                                ict: parseFloat(row[11]) || 0,
+                                englishAL: parseFloat(row[12]) || 0,
+                                german: parseFloat(row[13]) || 0,
+                                french: parseFloat(row[14]) || 0
+                            });
+                        }
+                    }
+
+                    if(studentsData.length > 0) {
+                        initSystem();
+                        // Switch Views
+                        document.getElementById('upload-section').classList.add('hidden');
+                        document.getElementById('search-section').classList.remove('hidden');
+                        document.getElementById('leaderboard-section').classList.remove('hidden');
+                    } else {
+                        throw new Error("No valid student data found in the uploaded file.");
+                    }
+                } catch(err) {
+                    errorEl.classList.remove('hidden');
+                    document.getElementById('upload-error-text').textContent = "Failed to parse file. Make sure it matches the required format.";
+                    console.error(err);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Initialize and rank students
+        function initSystem() {
+            // Sort by total descending
+            rankedStudents = [...studentsData].sort((a, b) => b.total - a.total);
+            
+            // Assign ranks (handling ties properly)
+            let currentRank = 1;
+            for (let i = 0; i < rankedStudents.length; i++) {
+                if (i > 0 && rankedStudents[i].total < rankedStudents[i-1].total) {
+                    currentRank = i + 1;
+                }
+                rankedStudents[i].rank = currentRank;
+            }
+
+            renderLeaderboard();
+        }
+
+        function isPassed(student) {
+            // Passed if student achieves >= 50% in all core subjects
+            return (
+                student.arabic >= (FULL_MARKS.main.arabic / 2) &&
+                student.englishOL >= (FULL_MARKS.main.englishOL / 2) &&
+                student.social >= (FULL_MARKS.main.social / 2) &&
+                student.math >= (FULL_MARKS.main.math / 2) &&
+                student.science >= (FULL_MARKS.main.science / 2)
+            );
+        }
+
+        // UI Rendering
+        function renderLeaderboard() {
+            const tbody = document.getElementById('leaderboard-body');
+            tbody.innerHTML = '';
+
+            const top10 = rankedStudents.slice(0, 10);
+
+            top10.forEach((student) => {
+                const percentage = ((student.total / FULL_MARKS.main.total) * 100).toFixed(2);
+                
+                let rankBadge = `<span class="text-slate-600 font-bold">#${student.rank}</span>`;
+                if (student.rank === 1) rankBadge = `<span class="text-2xl" title="Rank 1">🥇</span>`;
+                else if (student.rank === 2) rankBadge = `<span class="text-2xl" title="Rank 2">🥈</span>`;
+                else if (student.rank === 3) rankBadge = `<span class="text-2xl" title="Rank 3">🥉</span>`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+                tr.innerHTML = `
+                    <td class="py-4 px-6 text-center border-b border-slate-100">${rankBadge}</td>
+                    <td class="py-4 px-6 border-b border-slate-100 font-medium text-slate-800">${student.name}</td>
+                    <td class="py-4 px-6 text-right border-b border-slate-100 font-bold text-school-700">${student.total.toFixed(2)}</td>
+                    <td class="py-4 px-6 text-right border-b border-slate-100"><span class="bg-blue-50 text-blue-700 py-1 px-3 rounded-full text-sm font-semibold">${percentage}%</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // Handle Search Events
+        document.getElementById('national-id').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                handleSearch();
+            }
+        });
+
+        function handleSearch() {
+            const input = document.getElementById('national-id');
+            const errorMsg = document.getElementById('error-message');
+            const searchVal = input.value.trim();
+
+            errorMsg.classList.add('hidden');
+
+            if (!searchVal) return;
+
+            const student = rankedStudents.find(s => s.id === searchVal);
+
+            if (student) {
+                displayResult(student);
+            } else {
+                errorMsg.classList.remove('hidden');
+            }
+        }
+
+        function clearSearch() {
+            document.getElementById('national-id').value = '';
+            document.getElementById('result-section').classList.add('hidden');
+            document.getElementById('leaderboard-section').classList.remove('hidden');
+            document.getElementById('search-section').classList.remove('hidden');
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function displayResult(student) {
+            document.getElementById('leaderboard-section').classList.add('hidden');
+            document.getElementById('result-section').classList.remove('hidden');
+
+            const percentage = (student.total / FULL_MARKS.main.total) * 100;
+            const passed = isPassed(student);
+
+            document.getElementById('res-name').textContent = student.name;
+            document.getElementById('res-id').textContent = `ID: ${student.id}`;
+            document.getElementById('res-rank').textContent = `#${student.rank}`;
+            
+            document.getElementById('res-total').textContent = student.total.toFixed(2);
+            document.getElementById('res-percentage').textContent = percentage.toFixed(2);
+
+            const statusBadge = document.getElementById('status-badge');
+            const statusWarning = document.getElementById('status-warning');
+            const statusCard = document.getElementById('status-card');
+
+            if (passed) {
+                statusBadge.innerHTML = `<i data-lucide="check-circle-2" class="w-8 h-8 text-green-500"></i><span class="text-green-600">PASSED</span>`;
+                statusWarning.classList.add('hidden');
+                statusCard.className = "bg-green-50 rounded-xl p-5 shadow-sm border border-green-200 flex flex-col justify-center items-center text-center";
+            } else {
+                statusBadge.innerHTML = `<i data-lucide="x-circle" class="w-8 h-8 text-red-500"></i><span class="text-red-600">NOT PASSED</span>`;
+                statusWarning.classList.remove('hidden');
+                statusCard.className = "bg-red-50 rounded-xl p-5 shadow-sm border border-red-200 flex flex-col justify-center items-center text-center";
+            }
+
+            // Populate Main Subjects Table
+            const mainTbody = document.getElementById('main-subjects-body');
+            mainTbody.innerHTML = `
+                ${createRow('Arabic', student.arabic, FULL_MARKS.main.arabic)}
+                ${createRow('English O.L', student.englishOL, FULL_MARKS.main.englishOL)}
+                ${createRow('Social Studies', student.social, FULL_MARKS.main.social)}
+                ${createRow('Mathematics', student.math, FULL_MARKS.main.math)}
+                ${createRow('Science', student.science, FULL_MARKS.main.science)}
+            `;
+
+            // Populate Additional Subjects Table
+            const addTbody = document.getElementById('add-subjects-body');
+            addTbody.innerHTML = `
+                ${createRow('English A.L', student.englishAL, FULL_MARKS.additional.englishAL)}
+                ${createRow('German', student.german, FULL_MARKS.additional.german)}
+                ${createRow('French', student.french, FULL_MARKS.additional.french)}
+                ${createRow('Religion', student.religion, FULL_MARKS.additional.religion)}
+                ${createRow('Art', student.art, FULL_MARKS.additional.art)}
+                ${createRow('ICT', student.ict, FULL_MARKS.additional.ict)}
+            `;
+
+            // Handle Certificate
+            const certSection = document.getElementById('certificate-section');
+            if (student.rank <= 10 && passed) {
+                certSection.classList.remove('hidden');
+                document.getElementById('cert-name').textContent = student.name;
+                document.getElementById('cert-rank').textContent = student.rank;
+                document.getElementById('cert-percentage').textContent = percentage.toFixed(2);
+            } else {
+                certSection.classList.add('hidden');
+            }
+
+            lucide.createIcons(); 
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function createRow(subject, mark, fullMark) {
+            const isFailing = mark < (fullMark / 2);
+            const markClass = isFailing ? "text-red-600 font-bold" : "text-slate-800 font-semibold";
+            return `
+                <tr class="hover:bg-slate-50 transition-colors">
+                    <td class="py-3 px-6 font-medium text-slate-700">${subject}</td>
+                    <td class="py-3 px-6 text-right ${markClass}">${mark.toFixed(2)}</td>
+                    <td class="py-3 px-6 text-right text-slate-500">${fullMark.toFixed(2)}</td>
+                </tr>
+            `;
+        }
+
+    </script>
+</body>
+</html>
