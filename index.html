@@ -341,14 +341,14 @@ window.addEventListener('load', () => {
             // Sort by total descending
             rankedStudents = [...studentsData].sort((a, b) => b.total - a.total);
             
-            // Assign ranks (standard competition: 1,2,2,4,5,...)
+            // Dense ranking: 1,2,3,4,4,5,6 (ties share rank, next gets rank+1)
             for (let i = 0; i < rankedStudents.length; i++) {
                 if (i === 0) {
                     rankedStudents[i].rank = 1;
                 } else if (rankedStudents[i].total === rankedStudents[i-1].total) {
                     rankedStudents[i].rank = rankedStudents[i-1].rank;
                 } else {
-                    rankedStudents[i].rank = i + 1;
+                    rankedStudents[i].rank = rankedStudents[i-1].rank + 1;
                 }
             }
 
